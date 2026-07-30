@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qode - AI Coding Challenge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+              950: '#020617',
+            },
+            accent: {
+              50: '#ede9fe',
+              100: '#ddd6fe',
+              200: '#c4b5fd',
+              300: '#a78bfa',
+              400: '#8b5cf6',
+              500: '#7c3aed',
+              600: '#6d28d9',
+              700: '#5b21b6',
+              800: '#4c1d95',
+              900: '#2e1065',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-dark-950 text-dark-200 min-h-screen font-sans">
+  <!-- Header -->
+  <header class="border-b border-dark-800 bg-dark-900/80 backdrop-blur-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-accent-600 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+          </svg>
+        </div>
+        <h1 class="text-xl font-bold text-white tracking-tight">Qode</h1>
+      </div>
+      <div class="text-sm text-dark-400">AI-Powered Coding Challenges</div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <!-- Generate Section -->
+    <section id="generate-section" class="space-y-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <select id="problem-type" class="bg-dark-800 border border-dark-700 rounded-lg px-4 py-2.5 text-dark-200 focus:outline-none focus:ring-2 focus:ring-accent-600 focus:border-transparent cursor-pointer">
+          <option value="">Surprise me</option>
+          <option value="Array">Array</option>
+          <option value="String">String</option>
+          <option value="Hash Map">Hash Map</option>
+          <option value="Two Pointers">Two Pointers</option>
+          <option value="Sliding Window">Sliding Window</option>
+          <option value="Binary Search">Binary Search</option>
+          <option value="Linked List">Linked List</option>
+          <option value="Tree">Tree</option>
+          <option value="Graph">Graph</option>
+          <option value="Dynamic Programming">Dynamic Programming</option>
+          <option value="Greedy">Greedy</option>
+          <option value="Backtracking">Backtracking</option>
+          <option value="Heap / Priority Queue">Heap / Priority Queue</option>
+          <option value="Bit Manipulation">Bit Manipulation</option>
+        </select>
+        <select id="difficulty" class="bg-dark-800 border border-dark-700 rounded-lg px-4 py-2.5 text-dark-200 focus:outline-none focus:ring-2 focus:ring-accent-600 focus:border-transparent cursor-pointer">
+          <option value="Easy">Easy</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+        <button id="generate-btn" class="bg-accent-600 hover:bg-accent-500 text-white font-medium px-6 py-2.5 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg id="generate-spinner" class="hidden w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span id="generate-text">Generate Challenge</span>
+        </button>
+      </div>
+      <input id="special-constraints" type="text" placeholder="Special constraints (e.g. 'must be solvable in O(n)', 'avoid recursion')..." class="w-full bg-dark-800 border border-dark-700 rounded-lg px-4 py-2.5 text-dark-200 placeholder-dark-600 focus:outline-none focus:ring-2 focus:ring-accent-600 focus:border-transparent text-sm">
+    </section>
+
+    <!-- Error Toast -->
+    <div id="error-toast" class="hidden bg-red-900/50 border border-red-800 rounded-lg px-4 py-3 flex items-start gap-3">
+      <svg class="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <div class="flex-1">
+        <p id="error-message" class="text-red-200 text-sm"></p>
+      </div>
+      <button onclick="document.getElementById('error-toast').classList.add('hidden')" class="text-red-400 hover:text-red-200 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Problem Display -->
+    <section id="problem-section" class="hidden">
+      <div class="bg-dark-900 border border-dark-800 rounded-xl overflow-hidden">
+        <!-- Problem Header -->
+        <div class="border-b border-dark-800 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 id="problem-title" class="text-lg font-semibold text-white"></h2>
+            <span id="problem-difficulty" class="text-xs font-medium px-2 py-1 rounded-full mt-1 inline-block"></span>
+          </div>
+        </div>
+
+        <!-- Problem Body -->
+        <div class="px-6 py-5 space-y-5">
+          <div>
+            <h3 class="text-sm font-medium text-dark-400 uppercase tracking-wider mb-2">Description</h3>
+            <div id="problem-description" class="text-dark-200 leading-relaxed prose prose-invert max-w-none"></div>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-medium text-dark-400 uppercase tracking-wider mb-2">Examples</h3>
+            <div id="problem-examples" class="space-y-3"></div>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-medium text-dark-400 uppercase tracking-wider mb-2">Constraints</h3>
+            <ul id="problem-constraints" class="space-y-1.5"></ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-medium text-dark-400 uppercase tracking-wider mb-2">Starter Code</h3>
+            <pre id="problem-starter" class="bg-dark-950 border border-dark-800 rounded-lg p-4 text-sm overflow-x-auto"><code></code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section id="solution-section" class="hidden space-y-5">
+      <!-- Code Editor -->
+      <div>
+        <label for="code-editor" class="block text-sm font-medium text-dark-300 mb-2">Your Solution (Python)</label>
+        <textarea id="code-editor" rows="14" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-4 py-3 font-mono text-sm text-green-400 placeholder-dark-600 focus:outline-none focus:ring-2 focus:ring-accent-600 focus:border-transparent resize-y" placeholder="Write your Python solution here..."></textarea>
+      </div>
+
+      <!-- Explanation -->
+      <div>
+        <label for="explanation" class="block text-sm font-medium text-dark-300 mb-2">Explain Your Approach</label>
+        <textarea id="explanation" rows="4" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-4 py-3 text-sm text-dark-200 placeholder-dark-600 focus:outline-none focus:ring-2 focus:ring-accent-600 focus:border-transparent resize-y" placeholder="Describe your algorithm, time complexity, and any edge case handling..."></textarea>
+      </div>
+
+      <!-- Submit -->
+      <div class="flex justify-end">
+        <button id="submit-btn" class="bg-accent-600 hover:bg-accent-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-8 py-2.5 rounded-lg transition-colors duration-200 flex items-center gap-2">
+          <svg id="submit-spinner" class="hidden w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span id="submit-text">Submit Solution</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Feedback Section -->
+    <section id="feedback-section" class="hidden">
+      <div id="feedback-content" class="rounded-xl overflow-hidden"></div>
+    </section>
+  </main>
+
+  <footer class="border-t border-dark-800 mt-12">
+    <div class="max-w-6xl mx-auto px-6 py-6 text-center text-sm text-dark-500">
+      Powered by AI · Built for learning
+    </div>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
