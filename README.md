@@ -7,7 +7,7 @@ An AI-powered coding challenge platform. Generate LeetCode-style problems, write
 - **Dynamic Problem Generation** — Generate problems on demand by difficulty (Easy/Medium/Hard), topic (Arrays, Trees, DP, Graphs, etc.), or with custom constraints (e.g. *"must be solvable in O(n)"*).
 - **Instant Solution Evaluation** — Submit your Python solution along with an explanation. The AI reviews correctness, identifies edge cases, analyzes time/space complexity, and suggests improvements.
 - **Guided AI Help** — A sidebar chat that can see your current code and the problem context. It gives hints and conceptual guidance without ever solving the problem for you.
-- **Surrender Mode** — Stuck? Get a thorough educational breakdown of how to think about the problem, what patterns to look for, and the algorithmic approach — not just the answer.
+- **Surrender Mode** — Stuck? Get a thorough educational breakdown of how to think about the problem, what patterns to look for, and the algorithmic approach, not just the answer.
 - **No Page Refreshes** — Everything is fetched asynchronously. Problems appear instantly, feedback slides in, chat streams in a sidebar.
 
 ## Tech Stack
@@ -28,7 +28,7 @@ qode/
 ├── requirements.txt      # Dependencies
 ├── .env                  # Your environment variables
 ├── templates/
-│   └── index.html        # Main page — dark-themed UI with Tailwind
+│   └── index.html        # Dark-themed UI with Tailwind
 └── static/
     ├── css/styles.css    # Custom scrollbar, animations, tab support
     └── js/app.js         # Async fetch logic, rendering, chat sidebar
@@ -169,4 +169,4 @@ The help prompt enforces strict rules against giving full solutions. The surrend
 - **Tailwind CDN** — No build pipeline needed for a portfolio project. Styles load instantly.
 - **Single Python file backend** — All routes and prompts in one file. Easy to read, modify, and deploy.
 - **`response_format` enforcement** — The OpenAI API parameter that forces JSON-only output is the single most important reliability improvement for structured AI responses.
-- **No test execution** — Evaluation is AI-based, not automated. The AI judges correctness based on the problem description and the user's code. This keeps the setup simple — no sandboxing, no test runner infrastructure.
+- **No test execution** — Evaluation is AI-based, not automated. The AI judges correctness based on the problem description and the user's code. This keeps the setup simple. That means no sandboxing, no test runner infrastructure, just free and private studying.
