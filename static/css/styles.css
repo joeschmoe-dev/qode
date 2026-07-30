@@ -1,13 +1,20 @@
-/* Custom style overrides for Qode */
+/* Qode - Dark theme overrides */
 
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#code-editor {
-  tab-size: 2;
-  -moz-tab-size: 2;
+/* CodeMirror overrides to match theme */
+.CodeMirror {
+  height: 22rem !important;
+  border-radius: 0.5rem;
+  border: 1px solid #262626;
+  font-size: 14px;
+}
+
+.CodeMirror-focused {
+  border-color: #525252;
 }
 
 /* Custom scrollbar */
@@ -17,36 +24,35 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #0a0a0a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #404040;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #525252;
 }
 
 /* Selection */
 ::selection {
-  background: #7c3aed;
+  background: #525252;
   color: white;
 }
 
-/* Focus visible for accessibility */
+/* Focus visible */
 *:focus-visible {
-  outline: 2px solid #7c3aed;
+  outline: 2px solid #737373;
   outline-offset: 2px;
 }
 
-/* Smooth transitions for all interactive elements */
+/* Smooth transitions */
 button, select, textarea, input {
   transition: all 0.15s ease-in-out;
 }
 
-/* Animation keyframes */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -54,4 +60,13 @@ button, select, textarea, input {
 
 section {
   animation: fade-in 0.3s ease-out;
+}
+
+/* Simple scrollbar for CodeMirror */
+.CodeMirror-scrollbar-filler {
+  background-color: #0a0a0a;
+}
+
+.CodeMirror-jumpbackdrop {
+  background-color: rgba(255, 255, 255, 0.1);
 }

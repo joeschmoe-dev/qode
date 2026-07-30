@@ -1,6 +1,7 @@
 // Current problem state
 let currentProblem = null;
 let starterCode = "";
+let editor = null;
 
 // DOM elements
 const problemTypeSelect = document.getElementById("problem-type");
@@ -25,7 +26,7 @@ const problemDescription = document.getElementById("problem-description");
 const problemExamples = document.getElementById("problem-examples");
 const problemConstraints = document.getElementById("problem-constraints");
 const problemStarter = document.getElementById("problem-starter");
-const codeEditor = document.getElementById("code-editor");
+const codeEditorDiv = document.getElementById("code-editor");
 const explanation = document.getElementById("explanation");
 const feedbackContent = document.getElementById("feedback-content");
 const restartBtn = document.getElementById("restart-btn");
@@ -79,6 +80,26 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// Initialize CodeMirror
+function initEditor() {
+  editor = CodeMirror(codeEditorDiv, {
+    value: "",
+    mode: "python",
+    theme: "material-darker",
+    lineNumbers: true,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    styleActiveLine: true,
+    indentUnit: 4,
+    tabSize: 4,
+    indentWithTabs: false,
+    lineWrapping: true,
+    scrollbarStyle: "simple"
+  });
+  editor.setSize(null, "22rem");
+  editor.refresh();
+}
+
 // Generate problem
 generateBtn.addEventListener("click", async () => {
   const difficulty = difficultySelect.value;
@@ -126,70 +147,57 @@ function renderProblem(problem) {
   problemDifficulty.textContent = diffText;
   problemDifficulty.className = `text-xs font-medium px-2.5 py-1 rounded-full mt-1 inline-block ${diffColors[diffText] || diffColors.Medium}`;
 
-  // Description - render basic markdown-style formatting
   problemDescription.innerHTML = formatDescription(problem.description || "");
 
-  // Examples
   problemExamples.innerHTML = "";
   if (problem.examples && problem.examples.length > 0) {
     problem.examples.forEach((ex, i) => {
       const div = document.createElement("div");
-      div.className = "bg-dark-950 border border-dark-800 rounded-lg p-4";
-      let html = `<div class="text-sm font-medium text-dark-300 mb-2">Example ${i + 1}</div>`;
-      html += `<div class="text-sm space-y-1"><code class="text-blue-300">Input:</code> <span class="text-dark-200">${escapeHtml(JSON.stringify(ex.input))}</span></div>`;
-      html += `<div class="text-sm"><code class="text-blue-300">Output:</code> <span class="text-green-400">${escapeHtml(JSON.stringify(ex.output))}</span></div>`;
+      div.className = "bg-dark-900 border border-dark-700 rounded p-4";
+      let html = `<div class="text-sm font-medium text-dark-400 mb-2">Example ${i + 1}</div>`;
+      html += `<div class="text-sm space-y-1"><span class="text-dark-400">Input:</span> <span class="text-dark-200 font-mono">${escapeHtml(JSON.stringify(ex.input))}</span></div>`;
+      html += `<div class="text-sm"><span class="text-dark-400">Output:</span> <span class="text-dark-200 font-mono">${escapeHtml(JSON.stringify(ex.output))}</span></div>`;
       if (ex.explanation) {
-        html += `<div class="text-sm mt-2 pt-2 border-t border-dark-800"><code class="text-dark-500">Explanation:</code> <span class="text-dark-400">${escapeHtml(ex.explanation)}</span></div>`;
+        html += `<div class="text-sm mt-2 pt-2 border-t border-dark-700"><span class="text-dark-500">Explanation:</span> <span class="text-dark-400">${escapeHtml(ex.explanation)}</span></div>`;
       }
       div.innerHTML = html;
       problemExamples.appendChild(div);
     });
   }
 
-  // Constraints
   problemConstraints.innerHTML = "";
   if (problem.constraints && problem.constraints.length > 0) {
     problem.constraints.forEach(c => {
       const li = document.createElement("li");
       li.className = "text-sm text-dark-400 flex items-start gap-2";
-      li.innerHTML = `<span class="text-dark-600 mt-1">•</span><span>${escapeHtml(c)}</span>`;
+      li.innerHTML = `<span class="text-dark-600 mt-0.5">•</span><span>${escapeHtml(c)}</span>`;
       problemConstraints.appendChild(li);
     });
   }
 
-  // Starter code
   starterCode = problem.starter_code || problem.function_signature || "";
   problemStarter.querySelector("code").textContent = starterCode;
-  codeEditor.value = starterCode;
+  editor.setValue(starterCode);
+  editor.clearHistory();
   explanation.value = "";
 
   problemSection.classList.remove("hidden");
-
-  // Scroll to problem
   problemSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function formatDescription(text) {
-  // Basic formatting: bold, code, newlines
   let html = escapeHtml(text);
-
-  // Bold
   html = html.replace(/\*\*(.*?)\*\*/g, "<strong class=\"text-dark-100\">$1</strong>");
-
-  // Inline code
-  html = html.replace(/`(.*?)`/g, "<code class=\"bg-dark-800 text-green-300 px-1.5 py-0.5 rounded text-xs font-mono\">$1</code>");
-
-  // Line breaks to paragraphs
+  html = html.replace(/`(.*?)`/g, "<code class=\"bg-dark-700 text-dark-200 px-1.5 py-0.5 rounded text-xs font-mono\">$1</code>");
   html = html.replace(/\n\n/g, "</p><p class=\"mt-3\">");
   html = html.replace(/\n/g, "<br>");
   html = `<p class="mt-3">${html}</p>`;
-
   return html;
 }
 
 // Submit solution
 submitBtn.addEventListener("click", async () => {
-  const code = codeEditor.value.trim();
+  const code = editor.getValue().trim();
   const expl = explanation.value.trim();
 
   if (!code) {
@@ -229,7 +237,8 @@ submitBtn.addEventListener("click", async () => {
 // Restart
 restartBtn.addEventListener("click", () => {
   if (confirm("Restart with the original starter code?")) {
-    codeEditor.value = starterCode;
+    editor.setValue(starterCode);
+    editor.clearHistory();
     explanation.value = "";
     feedbackSection.classList.add("hidden");
   }
@@ -237,29 +246,23 @@ restartBtn.addEventListener("click", () => {
 
 // Render feedback
 function renderFeedback(fb) {
-  // Determine styling based on verdict
   const isPass = fb.verdict === "Pass" || fb.is_correct === true;
-  const borderColor = isPass ? "border-green-700" : (fb.verdict === "Needs Improvement" ? "border-yellow-700" : "border-red-700");
-  const bgColor = isPass ? "bg-green-950/30" : (fb.verdict === "Needs Improvement" ? "bg-yellow-950/30" : "bg-red-950/30");
+  const borderColor = isPass ? "border-green-800" : (fb.verdict === "Needs Improvement" ? "border-yellow-800" : "border-red-800");
   const iconColor = isPass ? "text-green-400" : (fb.verdict === "Needs Improvement" ? "text-yellow-400" : "text-red-400");
 
-  let html = `<div class="bg-dark-900 border ${borderColor} rounded-xl overflow-hidden">`;
-
-  // Header
-  html += `<div class="border-b border-dark-800 px-6 py-4 flex items-center gap-3">`;
+  let html = `<div class="bg-dark-800 border ${borderColor} rounded overflow-hidden">`;
+  html += `<div class="border-b border-dark-700 px-6 py-4 flex items-center gap-3">`;
   if (isPass) {
     html += `<svg class="w-6 h-6 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
   } else {
     html += `<svg class="w-6 h-6 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
   }
   html += `<div>`;
-  html += `<h3 class="text-lg font-semibold text-white">${fb.verdict || "Evaluation Complete"}</h3>`;
+  html += `<h3 class="text-lg font-semibold text-dark-100">${fb.verdict || "Evaluation Complete"}</h3>`;
   html += `</div></div>`;
 
-  // Content
   html += `<div class="px-6 py-5 space-y-5">`;
 
-  // Feedback text
   if (fb.feedback) {
     html += `<div>`;
     html += `<h4 class="text-sm font-medium text-dark-400 uppercase tracking-wider mb-2">Feedback</h4>`;
@@ -267,40 +270,36 @@ function renderFeedback(fb) {
     html += `</div>`;
   }
 
-  // Complexity
   html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">`;
-  html += `<div class="bg-dark-950 border border-dark-800 rounded-lg p-4">`;
+  html += `<div class="bg-dark-900 border border-dark-700 rounded p-4">`;
   html += `<div class="text-xs font-medium text-dark-500 uppercase mb-1">Time Complexity</div>`;
-  html += `<div class="text-blue-300 font-mono text-sm">${escapeHtml(fb.time_complexity || "N/A")}</div>`;
+  html += `<div class="text-dark-200 font-mono text-sm">${escapeHtml(fb.time_complexity || "N/A")}</div>`;
   html += `</div>`;
-  html += `<div class="bg-dark-950 border border-dark-800 rounded-lg p-4">`;
+  html += `<div class="bg-dark-900 border border-dark-700 rounded p-4">`;
   html += `<div class="text-xs font-medium text-dark-500 uppercase mb-1">Space Complexity</div>`;
-  html += `<div class="text-blue-300 font-mono text-sm">${escapeHtml(fb.space_complexity || "N/A")}</div>`;
+  html += `<div class="text-dark-200 font-mono text-sm">${escapeHtml(fb.space_complexity || "N/A")}</div>`;
   html += `</div></div>`;
 
-  // Improvements
   if (fb.improvements && fb.improvements.length > 0) {
     html += `<div>`;
     html += `<h4 class="text-sm font-medium text-dark-400 uppercase tracking-wider mb-2">Suggested Improvements</h4>`;
     html += `<ul class="space-y-2">`;
     fb.improvements.forEach(imp => {
-      html += `<li class="flex items-start gap-2 text-sm text-dark-300"><span class="text-accent-400 mt-0.5">→</span><span>${escapeHtml(imp)}</span></li>`;
+      html += `<li class="flex items-start gap-2 text-sm text-dark-300"><span class="text-dark-400 mt-0.5">→</span><span>${escapeHtml(imp)}</span></li>`;
     });
     html += `</ul></div>`;
   }
 
-  // Ideal approach
   if (fb.ideal_approach) {
-    html += `<div class="bg-accent-950/30 border border-accent-900 rounded-lg p-4">`;
-    html += `<h4 class="text-sm font-medium text-accent-300 uppercase tracking-wider mb-2">Ideal Approach</h4>`;
-    html += `<p class="text-dark-300 text-sm leading-relaxed">${escapeHtml(fb.ideal_approach)}</p>`;
+    html += `<div class="bg-dark-900 border border-dark-700 rounded p-4">`;
+    html += `<h4 class="text-sm font-medium text-dark-300 uppercase tracking-wider mb-2">Ideal Approach</h4>`;
+    html += `<p class="text-dark-400 text-sm leading-relaxed">${escapeHtml(fb.ideal_approach)}</p>`;
     html += `</div>`;
   }
 
   html += `</div></div>`;
   feedbackContent.innerHTML = html;
 
-  // Scroll to feedback
   feedbackSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -320,28 +319,27 @@ helpToggle.addEventListener("click", openHelp);
 helpClose.addEventListener("click", closeHelp);
 helpOverlay.addEventListener("click", closeHelp);
 
-// Add message to chat
 function addMessage(content, isUser = false) {
   const div = document.createElement("div");
   div.className = `flex gap-3 ${isUser ? "flex-row-reverse" : ""}`;
 
   if (isUser) {
     div.innerHTML = `
-      <div class="w-8 h-8 bg-dark-700 rounded-lg flex-shrink-0 flex items-center justify-center">
+      <div class="w-8 h-8 bg-dark-600 rounded flex-shrink-0 flex items-center justify-center">
         <svg class="w-4 h-4 text-dark-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
         </svg>
       </div>
-      <div class="bg-accent-700 rounded-lg px-4 py-3 text-sm text-white max-w-[80%]">${escapeHtml(content)}</div>
+      <div class="bg-dark-600 rounded px-4 py-3 text-sm text-dark-100 max-w-[80%]">${escapeHtml(content)}</div>
     `;
   } else {
     div.innerHTML = `
-      <div class="w-8 h-8 bg-accent-600 rounded-lg flex-shrink-0 flex items-center justify-center">
-        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="w-8 h-8 bg-dark-600 rounded flex-shrink-0 flex items-center justify-center">
+        <svg class="w-4 h-4 text-dark-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>
       </div>
-      <div class="bg-dark-800 rounded-lg px-4 py-3 text-sm text-dark-200 max-w-[80%] whitespace-pre-wrap">${escapeHtml(content)}</div>
+      <div class="bg-dark-700 rounded px-4 py-3 text-sm text-dark-200 max-w-[80%] whitespace-pre-wrap">${escapeHtml(content)}</div>
     `;
   }
 
@@ -349,7 +347,6 @@ function addMessage(content, isUser = false) {
   helpMessages.scrollTop = helpMessages.scrollHeight;
 }
 
-// Send help message
 helpForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = helpInput.value.trim();
@@ -367,7 +364,7 @@ helpForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({
         message,
         problem: currentProblem,
-        code: codeEditor.value
+        code: editor.getValue()
       })
     });
 
@@ -409,7 +406,6 @@ surrenderBtn.addEventListener("click", async () => {
 
     const data = await res.json();
 
-    // Render the surrender response
     let html = `<div class="prose prose-invert max-w-none">`;
     html += `<p class="text-dark-200 leading-relaxed whitespace-pre-wrap">${escapeHtml(data.response)}</p>`;
     html += `</div>`;
@@ -422,6 +418,9 @@ surrenderBtn.addEventListener("click", async () => {
     showError(err.message);
   } finally {
     surrenderBtn.disabled = false;
-    surrenderBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364L9 9.76m9 9.636l-3.636 3.636M4.636 4.636L9 9.76m-4.364 9.636l3.636-3.636M13.236 4.636L9 9.76m4.236-.036l-3.636 3.636"/></svg> I Give Up — Show Me the Solution`;
+    surrenderBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364L9 9.76m9 9.636l-3.636 3.636M4.636 4.636L9 9.76m-4.364 9.636l3.636-3.636M13.236 4.636L9 9.76m4.236-.036l-3.636 3.636"/></svg> I Give Up! Show Me the Solution`;
   }
 });
+
+// Init
+initEditor();
