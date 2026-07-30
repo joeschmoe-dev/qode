@@ -26,7 +26,7 @@ qode/
 ├── app.py                # Flask server, 4 API endpoints, AI client
 ├── config.py             # AI endpoint, API key, model config
 ├── requirements.txt      # Dependencies
-├── .env                  # Your environment variables (gitignored)
+├── .env                  # Your environment variables
 ├── templates/
 │   └── index.html        # Main page — dark-themed UI with Tailwind
 └── static/
@@ -43,7 +43,7 @@ qode/
 
 2. **Configure your AI endpoint:**
    ```bash
-   cp .env.example .env
+   cp .example_env .env
    ```
    Edit `.env`:
    ```env
