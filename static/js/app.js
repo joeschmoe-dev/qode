@@ -29,6 +29,18 @@ const codeEditor = document.getElementById("code-editor");
 const explanation = document.getElementById("explanation");
 const feedbackContent = document.getElementById("feedback-content");
 const restartBtn = document.getElementById("restart-btn");
+const helpToggle = document.getElementById("help-toggle");
+const helpClose = document.getElementById("help-close");
+const helpOverlay = document.getElementById("help-overlay");
+const helpSidebar = document.getElementById("help-sidebar");
+const helpMessages = document.getElementById("help-messages");
+const helpForm = document.getElementById("help-form");
+const helpInput = document.getElementById("help-input");
+const helpSend = document.getElementById("help-send");
+const surrenderBtn = document.getElementById("surrender-btn");
+const surrenderSection = document.getElementById("surrender-section");
+const surrenderResponse = document.getElementById("surrender-response");
+const surrenderContent = document.getElementById("surrender-content");
 
 // Utility functions
 function showError(msg) {
@@ -92,6 +104,8 @@ generateBtn.addEventListener("click", async () => {
     renderProblem(problem);
     solutionSection.classList.remove("hidden");
     feedbackSection.classList.add("hidden");
+    surrenderSection.classList.remove("hidden");
+    surrenderResponse.classList.add("hidden");
   } catch (err) {
     showError(err.message);
   } finally {
@@ -289,3 +303,125 @@ function renderFeedback(fb) {
   // Scroll to feedback
   feedbackSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+// Help sidebar
+function openHelp() {
+  helpSidebar.classList.remove("translate-x-full");
+  helpOverlay.classList.remove("hidden");
+  helpInput.focus();
+}
+
+function closeHelp() {
+  helpSidebar.classList.add("translate-x-full");
+  helpOverlay.classList.add("hidden");
+}
+
+helpToggle.addEventListener("click", openHelp);
+helpClose.addEventListener("click", closeHelp);
+helpOverlay.addEventListener("click", closeHelp);
+
+// Add message to chat
+function addMessage(content, isUser = false) {
+  const div = document.createElement("div");
+  div.className = `flex gap-3 ${isUser ? "flex-row-reverse" : ""}`;
+
+  if (isUser) {
+    div.innerHTML = `
+      <div class="w-8 h-8 bg-dark-700 rounded-lg flex-shrink-0 flex items-center justify-center">
+        <svg class="w-4 h-4 text-dark-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+      </div>
+      <div class="bg-accent-700 rounded-lg px-4 py-3 text-sm text-white max-w-[80%]">${escapeHtml(content)}</div>
+    `;
+  } else {
+    div.innerHTML = `
+      <div class="w-8 h-8 bg-accent-600 rounded-lg flex-shrink-0 flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div class="bg-dark-800 rounded-lg px-4 py-3 text-sm text-dark-200 max-w-[80%] whitespace-pre-wrap">${escapeHtml(content)}</div>
+    `;
+  }
+
+  helpMessages.appendChild(div);
+  helpMessages.scrollTop = helpMessages.scrollHeight;
+}
+
+// Send help message
+helpForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const message = helpInput.value.trim();
+  if (!message) return;
+
+  addMessage(message, true);
+  helpInput.value = "";
+  helpSend.disabled = true;
+  helpSend.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+  try {
+    const res = await fetch("/api/help", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        problem: currentProblem,
+        code: codeEditor.value
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Request failed" }));
+      throw new Error(err.error || "Failed to get help");
+    }
+
+    const data = await res.json();
+    addMessage(data.response);
+  } catch (err) {
+    addMessage(`Error: ${err.message}`, false);
+  } finally {
+    helpSend.disabled = false;
+    helpSend.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>`;
+  }
+});
+
+// Surrender
+surrenderBtn.addEventListener("click", async () => {
+  if (!confirm("Are you sure? This will show you the full solution approach.")) {
+    return;
+  }
+
+  surrenderBtn.disabled = true;
+  surrenderBtn.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Thinking...`;
+
+  try {
+    const res = await fetch("/api/surrender", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ problem: currentProblem })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Request failed" }));
+      throw new Error(err.error || "Failed to get solution");
+    }
+
+    const data = await res.json();
+
+    // Render the surrender response
+    let html = `<div class="prose prose-invert max-w-none">`;
+    html += `<p class="text-dark-200 leading-relaxed whitespace-pre-wrap">${escapeHtml(data.response)}</p>`;
+    html += `</div>`;
+    surrenderContent.innerHTML = html;
+
+    surrenderSection.classList.add("hidden");
+    surrenderResponse.classList.remove("hidden");
+    surrenderResponse.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    surrenderBtn.disabled = false;
+    surrenderBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364L9 9.76m9 9.636l-3.636 3.636M4.636 4.636L9 9.76m-4.364 9.636l3.636-3.636M13.236 4.636L9 9.76m4.236-.036l-3.636 3.636"/></svg> I Give Up — Show Me the Solution`;
+  }
+});

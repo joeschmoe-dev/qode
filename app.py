@@ -51,6 +51,32 @@ Return your response in this exact JSON format (no extra text, no markdown code 
 
 Be constructive and thorough. If correct, praise and suggest optimizations. If incorrect, explain what's wrong and hint at the right direction."""
 
+HELP_SYSTEM_PROMPT = """You are a patient coding tutor. The user is working on a LeetCode-style problem and wants help.
+
+CRITICAL RULES:
+- NEVER give the full solution or code that solves the problem
+- NEVER tell them the exact answer
+- DO suggest approaches, patterns, or concepts they could research
+- DO point out if their current approach has flaws
+- DO ask guiding questions that lead them to the answer
+- DO suggest what data structures or algorithms might be relevant
+- DO explain WHY certain approaches work or don't work for this problem type
+
+Your goal is to help them learn, not to give them the answer. Be encouraging but firm on not solving it for them."""
+
+SURRENDER_SYSTEM_PROMPT = """You are an expert coding tutor. The user has given up on a problem and wants to understand the proper approach.
+
+Provide a comprehensive educational explanation that includes:
+1. How to think about this type of problem - what patterns to look for
+2. The key insight or "aha" moment needed
+3. A step-by-step approach to solving it (not the full code, but the algorithmic thinking)
+4. What data structures would be most helpful and why
+5. Common pitfalls to avoid
+6. Time/space complexity tradeoffs to consider
+7. How to verify their solution once they implement it
+
+Make it educational and thorough. Help them understand the thinking process, not just the answer."""
+
 
 def call_ai(messages, force_json=True):
     """Call the openai-compatible chat completions endpoint."""
@@ -304,6 +330,82 @@ Evaluate this solution for the problem above."""
         logger.error(f"Error in evaluate endpoint: {type(e).__name__}: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/help", methods=["POST"])
+def help():
+    try:
+        user_message = request.json.get("message", "")
+        problem = request.json.get("problem", {})
+        code = request.json.get("code", "")
+
+        logger.info(f"Help request: question='{user_message[:100]}...'")
+
+        problem_context = f"""Problem: {problem.get('title', 'Unknown')}
+Description: {problem.get('description', '')}
+Function Signature: {problem.get('function_signature', '')}
+Constraints: {'; '.join(problem.get('constraints', []))}"""
+
+        code_context = f"""Current code:
+```python
+{code}
+```""" if code else ""
+
+        user_prompt = f"""{problem_context}
+
+{code_context}
+
+User's question: {user_message}
+
+Please provide hints and guidance, but DO NOT give the full solution."""
+
+        messages = [
+            {"role": "system", "content": HELP_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt}
+        ]
+
+        raw_response = call_ai(messages, force_json=False)
+        if raw_response is None:
+            logger.error("call_ai returned None in help")
+            return jsonify({"error": "AI request failed"}), 500
+
+        logger.info(f"Help response: {len(raw_response)} chars")
+        return jsonify({"response": raw_response})
+    except Exception as e:
+        logger.error(f"Error in help endpoint: {type(e).__name__}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/surrender", methods=["POST"])
+def surrender():
+    try:
+        problem = request.json.get("problem", {})
+
+        logger.info(f"Surrender request: problem={problem.get('title', 'Unknown')}")
+
+        problem_context = f"""Problem: {problem.get('title', 'Unknown')}
+Description: {problem.get('description', '')}
+Function Signature: {problem.get('function_signature', '')}
+Constraints: {'; '.join(problem.get('constraints', []))}
+Examples: {json_lib.dumps(problem.get('examples', []), default=str)}"""
+
+        user_prompt = f"""I've given up on this problem. Please explain the proper approach to solve it."""
+
+        messages = [
+            {"role": "system", "content": SURRENDER_SYSTEM_PROMPT},
+            {"role": "user", "content": f"{problem_context}\n\n{user_prompt}"}
+        ]
+
+        raw_response = call_ai(messages, force_json=False)
+        if raw_response is None:
+            logger.error("call_ai returned None in surrender")
+            return jsonify({"error": "AI request failed"}), 500
+
+        logger.info(f"Surrender response: {len(raw_response)} chars")
+        return jsonify({"response": raw_response})
+    except Exception as e:
+        logger.error(f"Error in surrender endpoint: {type(e).__name__}: {e}")
         return jsonify({"error": str(e)}), 500
 
 
