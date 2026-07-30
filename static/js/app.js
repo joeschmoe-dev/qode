@@ -1,5 +1,6 @@
 // Current problem state
 let currentProblem = null;
+let starterCode = "";
 
 // DOM elements
 const problemTypeSelect = document.getElementById("problem-type");
@@ -27,6 +28,7 @@ const problemStarter = document.getElementById("problem-starter");
 const codeEditor = document.getElementById("code-editor");
 const explanation = document.getElementById("explanation");
 const feedbackContent = document.getElementById("feedback-content");
+const restartBtn = document.getElementById("restart-btn");
 
 // Utility functions
 function showError(msg) {
@@ -142,8 +144,10 @@ function renderProblem(problem) {
   }
 
   // Starter code
-  const starterCode = problem.starter_code || problem.function_signature || "";
+  starterCode = problem.starter_code || problem.function_signature || "";
   problemStarter.querySelector("code").textContent = starterCode;
+  codeEditor.value = starterCode;
+  explanation.value = "";
 
   problemSection.classList.remove("hidden");
 
@@ -205,6 +209,15 @@ submitBtn.addEventListener("click", async () => {
     showError(err.message);
   } finally {
     setSubmitLoading(submitBtn, submitSpinner, submitText, false);
+  }
+});
+
+// Restart
+restartBtn.addEventListener("click", () => {
+  if (confirm("Restart with the original starter code?")) {
+    codeEditor.value = starterCode;
+    explanation.value = "";
+    feedbackSection.classList.add("hidden");
   }
 });
 
